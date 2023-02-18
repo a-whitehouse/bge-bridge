@@ -5,11 +5,11 @@
     "build": "bge build",
     "start": "bge serve"
   },
-  "devDependencies": {
-    "bge-dev": "^0.2.1"
-  },
   "dependencies": {
-    "bge-core": "^0.2.0",
-    "bge-playingcard": "^0.1.6"
+    "bge-core": "^0.2.3",
+    "bge-playingcard": "^0.1.8"
+  },
+  "devDependencies": {
+    "bge-dev": "^0.2.3"
   }
 }

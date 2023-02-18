@@ -10,36 +10,10 @@ import main from "./actions";
  */
 export class CardGame extends bge.Game<Player> {
     /**
-     * Draw pile that will gradually deplete during the game.
-     */
-    readonly drawPile = new bge.Deck(PlayingCard, {
-        orientation: bge.CardOrientation.FaceDown
-    });
-
-    /**
-     * Players discard cards to this pile.
-     */
-    readonly discardPile = new bge.Deck(PlayingCard, {
-        orientation: bge.CardOrientation.FaceUp
-    });
-    
-    /**
-     * This will contain three face-up cards that players can choose from.
-     */
-    readonly shop = new bge.Hand(PlayingCard, 20, {
-        orientation: bge.CardOrientation.FaceUp
-    });
-
-    /**
      * This zone displays all the shared objects in the middle of the table.
      */
     @bge.display()
     readonly tableCenter = new TableCenter(this);
-
-    /**
-     * Button that we can show in the top bar for players to click in a prompt.
-     */
-    readonly discardButton = new bge.Button("Discard");
 
     /**
      * Game runners expect games to have a public parameterless constructor, like this.

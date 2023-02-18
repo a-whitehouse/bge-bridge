@@ -8,30 +8,6 @@ import { CardGame } from "./game";
 export class TableCenter extends Zone {
     private readonly _game: CardGame;
 
-    /**
-     * Display property for the shared draw pile.
-     */
-    @display({ label: "Draw Pile", localPosition: { x: -4, z: 5 }})
-    get drawPile() {
-        return this._game.drawPile;
-    }
-    
-    /**
-     * Display property for the shared discard pile.
-     */
-    @display({ label: "Discard Pile", localPosition: { x: 4, z: 5 }})
-    get discardPile() {
-        return this._game.discardPile;
-    }
-    
-    /**
-     * Display property for the shared card shop.
-     */
-    @display({ label: "Shop", localPosition: { z: -7 }})
-    get shop() {
-        return this._game.shop;
-    }
-
     constructor(game: CardGame) {
         super();
 

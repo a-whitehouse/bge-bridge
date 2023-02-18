@@ -1,6 +1,6 @@
 import * as bge from "bge-core";
 
-import { PlayingCard, PokerHand } from "bge-playingcard";
+import { CardValue, PlayingCard, PokerHand } from "bge-playingcard";
 
 import { CardGame } from "../game";
 import { Player } from "../player";
@@ -9,153 +9,43 @@ export default async function main(game: CardGame) {
 
     await setup(game);
 
-    let player = game.random.item(game.players);
+    while (game.players[0].hand.count > 0) {
+        let highestCard: CardValue = 0;
+        let winningPlayer: Player;
 
-    while (game.drawPile.count > 0) {
-        await playerTurn(game, player);
-        player = game.getNextPlayer(player);
+        for (let player of game.players) {
+            await playerTurn(game, player);
+            if (player.selectedCard.value > highestCard) {
+                highestCard = player.selectedCard.value;
+                winningPlayer = player;
+            }
+        }
+
+        for (let player of game.players) {
+            winningPlayer.wonCards.add(player.selectedCard);
+            player.selectedCard = null;
+            await game.delay.beat();
+        }
     }
 
-    await finalScoring(game);
+    let sortedPlayers = [...game.players].sort((a, b) => a.wonCards.count - b.wonCards.count);
+    let winningPlayer = sortedPlayers[0];
+    game.message.add("Player {0} is the winner!", winningPlayer.name);
 }
 
 async function setup(game: CardGame) {
-
+    let deck = new bge.Deck(PlayingCard);
+    deck.addRange(PlayingCard.generateDeck());
+    deck.shuffle(game.random);
+    deck.deal(game.players.map(x => x.hand), 3);
     game.addPlayerZones(x => x.createZone(), {
         avoid: game.tableCenter.footprint
     });
-
-    game.message.set("Setting up the deck...");
-
-    game.discardPile.addRange(PlayingCard.generateDeck());
-
-    await game.delay.short();
-
-    game.discardPile.shuffle(game.random);
-    game.drawPile.addRange(game.discardPile.removeAll());
-
-    await game.delay.short();
-    
-    game.message.set("Dealing starting hands...");
-
-    game.drawPile.deal(game.players.map(x => x.hand), 5);
-    
-    await game.delay.short();
-
-    game.message.set("Filling the {0}", "Shop");
-
-    game.shop.addRange(game.drawPile.drawRange(3));
-    
-    await game.delay.short();
-
-    game.message.clear();
 }
 
 async function playerTurn(game: CardGame, player: Player) {
-
-    game.message.set("It's {0}'s turn to discard a card!", player);
-    
-    while (!await game.anyExclusive(() => [
-        changeSelection(game, player),
-        player.prompt.click(game.discardButton, {
-            if: player.hand.selected.length === 1,
-            return: true
-        })
-    ]));
-    
-    const selected = player.hand.selected[0];
-
-    game.message.set("{0} discards their {1}!", player, selected);
-
-    game.discardPile.add(player.hand.remove(selected));
-
-    await game.delay.short();
-
-    game.message.set("Now {0} can draw from the {1} or the {2}", player, "Draw Pile", "Shop");
-
-    const clicked = await game.anyExclusive(() => [
-        player.prompt.click(game.drawPile, {
-            message: { format: "Click on the {0}", args: ["Draw Pile"] }
-        }),
-        player.prompt.clickAny(game.shop, {
-            message: { format: "Click on any card in the {0}", args: ["Shop"] }
-        })
-    ]);
-    
-    if (clicked instanceof PlayingCard) {
-        game.shop.remove(clicked);
-        player.hand.add(clicked);
-        
-        game.message.set("{0} takes a {1} from the {2}!", player, clicked, "Shop");
-    
-        await game.delay.beat();
-
-        game.shop.add(game.drawPile.draw());
-
-        await game.delay.beat();
-    } else {
-        const card = game.drawPile.draw();
-        player.hand.add(card);
-        
-        game.message.set("{0} draws from the {1}, refilling the {2}!", player, "Draw Pile", "Shop");
-    
-        await game.delay.beat();
-
-        game.discardPile.addRange(game.shop.removeAll());
-
-        await game.delay.beat();
-
-        game.shop.addRange(game.drawPile.drawRange(3));
-
-        await game.delay.beat();
-    }
-}
-
-async function changeSelection(game: CardGame, player: Player): Promise<false> {
-
-    const clicked = await player.prompt.clickAny(player.hand.unselected, {
-        message: player.hand.selected.length === 0
-            ? "Select a card to discard"
-            : "Select a different card"
-    });
-    
-    player.hand.setSelected(false);
-    player.hand.setSelected(clicked, true);
-
-    return false;
-}
-
-async function finalScoring(game: CardGame) {
-
-    const pokerHands = game.players.map(x => ({
-        player: x,
-        hand: PokerHand.getBest(x.hand)
-    })).sort((a, b) => PokerHand.compare(a.hand, b.hand));
-
-    game.message.set("Final scoring!");
-
-    await game.delay.short();
-
-    let index = 0;
-
-    for (let scoreInfo of pokerHands) {
-        game.discardPile.addRange(game.shop.removeAll());
-
-        await game.delay.beat();
-
-        scoreInfo.player.finalScore = ++index;
-        
-        game.message.set("{0} has a {1}!", scoreInfo.player, scoreInfo.hand);
-        
-        scoreInfo.player.hand.removeAll();
-        game.shop.addRange(scoreInfo.hand.cards);
-
-        await game.delay.long();
-    }
-
-    game.discardPile.addRange(game.shop.removeAll());
-    
+    console.log("Doing something.")
+    player.selectedCard = await player.prompt.clickAny(player.hand, { message: 'Click on a card.' });
+    player.hand.remove(player.selectedCard);
     await game.delay.beat();
-    
-    game.message.set("Thanks for playing!");
 }
